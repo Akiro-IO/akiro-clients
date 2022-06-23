@@ -1,4 +1,4 @@
-![Akiro Logo](/images/akiro-logo.svg)
+![Akiro Logo](/images/akiro.png)
 
 # Akiro - MQTT Java Client
 
