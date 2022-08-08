@@ -19,7 +19,7 @@ Create a Client Instance by providing the required parameters.
 <!-- var mqttClient = new Paho.MQTT.Client(mqtt broker ip, broker port, your clientId/deviceId) -->
 import paho.mqtt.client as mqtt
 
-mqttClient = mqtt.Client(client_id="", clean_session=True, userdata=None, protocol=MQTTv311, transport="tcp")
+akiro_mqtt_client = mqtt.Client(client_id="", clean_session=True, userdata=None, protocol=MQTTv311, transport="tcp")
 </code></pre>
 
 ### Client Parameters
@@ -37,14 +37,14 @@ Set a username and optionally a password for broker authentication. Must be call
 <pre><code>
 username = "example"
 password = None
-mqttClient.username_pw_set(username, password)
+akiro_mqtt_client.username_pw_set(username, password)
 </code></pre>
 
 ## Connect to the Broker
 Connect the client to the broker by passing the connection parameters
 
 <pre><code>
-mqttClient.connect(host, port=1883, keepalive=60, bind_address="")
+akiro_mqtt_client.connect(broker, port, keepalive)
 </code></pre>
 
 ### Connection Parameters
@@ -53,52 +53,48 @@ Following connection parameters are supported
 host(type - string) - the hostname or IP address of the remote broker
 port(type - number) - the network port of the server host to connect to. Defaults to 1883. Note that the default port for MQTT over SSL/TLS is 8883 so if you are using tls_set() or tls_set_context(), the port may need providing manually
 keepalive(type - number) - maximum period in seconds allowed between communications with the broker. If no other messages are being exchanged, this controls the rate at which the client will send ping messages to the broker
-bind_address(type - string) - the IP address of a local network interface to bind this client to, assuming multiple interfaces exist
 
 ## Callbacks
 MQTT Client can be connected by providing the respective callbacks in order to take control on the actions and perform certain business logic.
 
 <pre><code>
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print("Connected to MQTT Broker!")
-    else:
-        print("Failed to connect, return code %d\n", rc)
+def on_connect(akiro_mqtt_client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to Akiro MQTT Broker!")
+        else:
+            print("Failed to connect, return code %d\n", rc)
 
-def on_disconnect(client, userdata, rc):
-    if rc == 0:
-        print("MQTT Broker disconnected!")
-    else:
-        print("Failed to disconnect, return code %d\n", rc)
+def disconnect_mqtt(akiro_mqtt_client):
+    print(f"Mqtt Client got disconnected `{client_id}")
+    akiro_mqtt_client.disconnect()
 
-def on_message(client, userdata, message):
-    print("Received message '" + str(message.payload) + "' on topic '"
-    + message.topic + "' with QoS " + str(message.qos))
+def on_message(akiro_mqtt_client, userdata, msg):
+        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-def on_publish(client, userdata, mid):
+def akiro_publish(akiro_mqtt_client):
 	print("Message published!")
 
-def on_subscribe(client, userdata, mid, granted_qos):
+def akiro_subscribe(akiro_mqtt_client: mqtt_client):
 	print("Subscribed client!")
 
-def on_unsubscribe(client, userdata, mid):
+def akiro_unsubscribe(akiro_mqtt_client: mqtt_client):
 	print("Unsubscribed client!")
 
-mqttClient.on_connect = on_connect
-mqttClient.on_disconnect = on_disconnect
-mqttClient.on_message = on_message
-mqttClient.on_publish = on_publish
-mqttClient.on_subscribe = on_subscribe
-mqttClient.on_unsubscribe = on_unsubscribe
+akiro_mqtt_client.on_connect = on_connect
+akiro_mqtt_client.on_disconnect = on_disconnect
+akiro_mqtt_client.on_message = on_message
+akiro_mqtt_client.on_publish = on_publish
+akiro_mqtt_client.on_subscribe = on_subscribe
+akiro_mqtt_client.on_unsubscribe = on_unsubscribe
 
-mqttClient.connect(broker, port)
+akiro_mqtt_client.connect(broker, port, keepalive)
 </code></pre>
 
 ## Publish Message to a Topic
 Once the connection is successfully established with the Broker, we can now publish message to the required topic. 
 
 <pre><code>
-publish(topic, payload=None, qos=0, retain=False)
+akiro_mqtt_client.publish(topic, msg, qos, False)
 </code></pre>
 
 ### Publish Parameters
@@ -111,14 +107,14 @@ retain - if set to True, the message will be set as the "last known good"/retain
 <pre><code>
 topic = "python/mqtt"
 message = "Test Message"
-mqttClient.publish(topic, msg, 1, False)
+akiro_mqtt_client.publish(topic, msg, 1, False)
 </code></pre>
 
 ## Subscribe to a Topic
 Upon subscribing to a topic, you will start receiving the messages at the callback method configured along with the MQTT Message object.
 
 <pre><code>
-subscribe(topic, qos=0)
+akiro_mqtt_client.subscribe(topic, qos)
 </code></pre>
 
 ### Subscribe Parameters
@@ -128,21 +124,21 @@ qos - the desired quality of service level for the subscription. Defaults to 0.
 
 <pre><code>
 topic = "python/mqtt"
-mqttClient.subscribe(topic)
+akiro_mqtt_client.subscribe(topic,qos)
 </code></pre>
 
 ## Unsubscribe from a Topic
 Unsubscribing from a topic is very similar and simple to subscribe.
 
 <pre><code>
-mqttClient.unsubscribe(“topic name”)
+akiro_mqtt_client.unsubscribe(“topic name”)
 </code></pre>
 
 ## Disconnect
 Disconnect the client from the broker using a simple call.
 
 <pre><code>
-mqttClient.disconnect();
+akiro_mqtt_client.disconnect();
 </code></pre>
 
 ## Complete Example Application
@@ -151,116 +147,168 @@ The example application to demonstrate the important operations
 ### Publisher Example -
 <pre><code>
 import random
+import sys
 import time
-from paho.mqtt import client as mqtt_client
 
-broker = "<akiro.broker.ip>"
-port = 1883
-topic = "python/mqtt"
+from paho.mqtt import client as mqtt_client
+from configparser import ConfigParser
+from pathlib import Path
+
+# Read config.ini file
+config_object = ConfigParser()
+path_current_directory = sys.path[1]
+config_object.read(path_current_directory + "/python-mqtt/conf/config.ini")
+contents = Path(path_current_directory + "/python-mqtt/conf/sampleMessage.json").read_text()
+
+# MQTT Broker
+akiroBrokerConfig = config_object["AkiroMQTTConfig"]
+broker = akiroBrokerConfig["host"]
+port = int(akiroBrokerConfig["port"])
+# MQTT Topic
+topic = akiroBrokerConfig["topic"]
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
-username = "<username>"
-password = "<password>"
+# MQTT Credentials
+username = akiroBrokerConfig["username"]
+password = akiroBrokerConfig["password"]
+# Client Keep Alive time period
+keepalive = int(akiroBrokerConfig["keepalive"])
+# Quality of Service in which the client publish the data
+qos = int(akiroBrokerConfig["qos"])
+# How many messages to publish
+message_limit = int(akiroBrokerConfig["message_limit"])
+
 
 def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
-    	# your other business logics
+    def on_connect(akiro_mqtt_client, userdata, flags, rc):
         if rc == 0:
-            print("Connected to MQTT Broker!")
+            print("Connected to Akiro MQTT Broker!")
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    # Creates a client
-    client = mqtt_client.Client(client_id)
-
-    # Sets username and password
-    client.username_pw_set(username, password)
-
-    # Binds the callback
-    client.on_connect = on_connect
-
-    # Connects the client
-    client.connect(broker, port)
-    return client
+    akiro_mqtt_client = mqtt_client.Client(client_id)
+    akiro_mqtt_client.username_pw_set(username, password)
+    akiro_mqtt_client.on_connect = on_connect
+    akiro_mqtt_client.connect(broker, port, keepalive)
+    return akiro_mqtt_client
 
 
-def publish(client):
+def disconnect_mqtt(akiro_mqtt_client):
+    print(f"Mqtt Client got disconnected `{client_id}")
+    akiro_mqtt_client.disconnect()
+
+
+def akiro_publish(akiro_mqtt_client):
     msg_count = 0
-    while True:
+    while msg_count <= message_limit:
         time.sleep(1)
-        msg = f"messages: {msg_count}"
-
-        # Publishes the message
-        result = client.publish(topic, msg, 1, False)
-
+        msg = contents
+        result = akiro_mqtt_client.publish(topic, msg, qos, False)
         # result: [0, 1]
         status = result[0]
         if status == 0:
-            print(f"Send `{msg}` to topic `{topic}`")
+            print(f"Send `{msg}` to topic `{topic}` with qos `{qos}`")
         else:
-            print(f"Failed to send message to topic {topic}")
+            print(f"Failed to send message to topic `{topic}` with qos `{qos}`")
         msg_count += 1
 
 
-def run():
-    client = connect_mqtt()
-    client.loop_start()
-    publish(client)
+def start():
+    akiro_mqtt_client = connect_mqtt()
+    akiro_mqtt_client.loop_start()
+    akiro_publish(akiro_mqtt_client)
+    # akiro_client.loop_stop()
+    disconnect_mqtt(akiro_mqtt_client)
+
+
+if __name__ == '__main__':
+    start()
+
 </code></pre>
 
 ### Subscriber Example -
 <pre><code>
 import random
+import sys
+import time
+
 from paho.mqtt import client as mqtt_client
 
-broker = "<akiro.broker.ip>"
-port = 1883
-topic = "python/mqtt"
+from configparser import ConfigParser
+
+# Read config.ini file
+path_current_directory = sys.path[1]
+config_object = ConfigParser()
+config_object.read(path_current_directory + "/python-mqtt/conf/config.ini")
+
+# Akiro MQTT Broker
+akiroBrokerConfig = config_object["AkiroMQTTConfig"]
+broker = akiroBrokerConfig["host"]
+port = int(akiroBrokerConfig["port"])
+# MQTT Topic
+topic = akiroBrokerConfig["topic"]
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
-username = "<username>"
-password = "<password>"
+# Akiro MQTT Credentials
+username = akiroBrokerConfig["username"]
+password = akiroBrokerConfig["password"]
+# Client Keep Alive time period
+keepalive = int(akiroBrokerConfig["keepalive"])
+# Quality of Service in which the client publish the data
+qos = int(akiroBrokerConfig["qos"])
+# How many messages to publish
+message_limit = int(akiroBrokerConfig["message_limit"])
+
 
 def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
-    	# add your business logic
-
+    def on_connect(akiro_client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
         else:
             print("Failed to connect, return code %d\n", rc)
 
-# Creates a client
-client = mqtt_client.Client(client_id)
-
-# Sets username and password
-client.username_pw_set(username, password)
-
-# Binds the callback
-client.on_connect = on_connect
-
-# Connects to a broker
-client.connect(broker, port)
-return client
+    akiro_mqtt_client = mqtt_client.Client(client_id)
+    akiro_mqtt_client.username_pw_set(username, password)
+    akiro_mqtt_client.on_connect = on_connect
+    akiro_mqtt_client.connect(broker, port, keepalive)
+    return akiro_mqtt_client
 
 
-def subscribe(client: mqtt_client):
-    def on_message(client, userdata, msg):
-    	# Add your business logic here
+def disconnect_mqtt(akiro_mqtt_client):
+    print(f"Mqtt Client got disconnected `{client_id}")
+    akiro_mqtt_client.disconnect()
 
+
+def akiro_subscribe(akiro_mqtt_client: mqtt_client):
+    def on_message(akiro_mqtt_client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-    # Subcribes to a topic
-    client.subscribe(topic)
-
-    #Binds the callback
-    client.on_message = on_message
+    akiro_mqtt_client.subscribe(topic, qos)
+    akiro_mqtt_client.on_message = on_message
 
 
-def run():
-    client = connect_mqtt()
-    subscribe(client)
-    client.loop_forever()
+def akiro_unsubscribe(akiro_mqtt_client: mqtt_client):
+    def on_message(akiro_mqtt_client, userdata, msg):
+        print("Unsubscribed client!")
+
+    akiro_mqtt_client.unsubscribe(topic)
+    akiro_mqtt_client.on_message = on_message
+
+
+def start():
+    akiro_mqtt_client = connect_mqtt()
+    # subscribe to the topic
+    akiro_subscribe(akiro_mqtt_client)
+    # This client will listen to the topic forever
+    akiro_mqtt_client.loop_forever()
+    # unsubscribe from the topic
+    akiro_unsubscribe(akiro_mqtt_client)
+
+    disconnect_mqtt(akiro_mqtt_client)
+
+
+if __name__ == '__main__':
+    start()
 </code></pre>
 
 ### Test -

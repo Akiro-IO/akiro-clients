@@ -27,35 +27,35 @@ password = akiroBrokerConfig["password"]
 keepalive = int(akiroBrokerConfig["keepalive"])
 # Quality of Service in which the client publish the data
 qos = int(akiroBrokerConfig["qos"])
-# Quality of Service in which the client publish the data
+# How many messages to publish
 message_limit = int(akiroBrokerConfig["message_limit"])
 
 
 def connect_mqtt():
-    def on_connect(akiro_client, userdata, flags, rc):
+    def on_connect(akiro_mqtt_client, userdata, flags, rc):
         if rc == 0:
             print("Connected to Akiro MQTT Broker!")
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    akiro_client = mqtt_client.Client(client_id)
-    akiro_client.username_pw_set(username, password)
-    akiro_client.on_connect = on_connect
-    akiro_client.connect(broker, port, keepalive)
-    return akiro_client
+    akiro_mqtt_client = mqtt_client.Client(client_id)
+    akiro_mqtt_client.username_pw_set(username, password)
+    akiro_mqtt_client.on_connect = on_connect
+    akiro_mqtt_client.connect(broker, port, keepalive)
+    return akiro_mqtt_client
 
 
-def disconnect_mqtt(akiro_client):
+def disconnect_mqtt(akiro_mqtt_client):
     print(f"Mqtt Client got disconnected `{client_id}")
-    akiro_client.disconnect()
+    akiro_mqtt_client.disconnect()
 
 
-def akiro_publish(akiro_client):
+def akiro_publish(akiro_mqtt_client):
     msg_count = 0
     while msg_count <= message_limit:
         time.sleep(1)
         msg = contents
-        result = akiro_client.publish(topic, msg, qos, False)
+        result = akiro_mqtt_client.publish(topic, msg, qos, False)
         # result: [0, 1]
         status = result[0]
         if status == 0:
@@ -66,11 +66,11 @@ def akiro_publish(akiro_client):
 
 
 def start():
-    akiro_client = connect_mqtt()
-    akiro_client.loop_start()
-    akiro_publish(akiro_client)
+    akiro_mqtt_client = connect_mqtt()
+    akiro_mqtt_client.loop_start()
+    akiro_publish(akiro_mqtt_client)
     # akiro_client.loop_stop()
-    disconnect_mqtt(akiro_client)
+    disconnect_mqtt(akiro_mqtt_client)
 
 
 if __name__ == '__main__':
