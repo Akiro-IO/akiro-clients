@@ -1,3 +1,4 @@
+import json
 import random
 import sys
 import time
@@ -10,7 +11,6 @@ from pathlib import Path
 config_object = ConfigParser()
 path_current_directory = sys.path[1]
 config_object.read(path_current_directory + "/python-mqtt/conf/config.ini")
-contents = Path(path_current_directory + "/python-mqtt/conf/sampleMessage.json").read_text()
 
 # MQTT Broker
 akiroBrokerConfig = config_object["AkiroMQTTConfig"]
@@ -27,8 +27,6 @@ password = akiroBrokerConfig["password"]
 keepalive = int(akiroBrokerConfig["keepalive"])
 # Quality of Service in which the client publish the data
 qos = int(akiroBrokerConfig["qos"])
-# How many messages to publish
-message_limit = int(akiroBrokerConfig["message_limit"])
 
 
 def connect_mqtt():
@@ -50,26 +48,23 @@ def disconnect_mqtt(akiro_mqtt_client):
     akiro_mqtt_client.disconnect()
 
 
-def akiro_publish(akiro_mqtt_client):
-    msg_count = 0
-    while msg_count <= message_limit:
-        time.sleep(1)
-        msg = contents
-        result = akiro_mqtt_client.publish(topic, msg, qos, False)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Send `{msg}` to topic `{topic}` with qos `{qos}`")
-        else:
-            print(f"Failed to send message to topic `{topic}` with qos `{qos}`")
-        msg_count += 1
+def akiro_publish(akiro_mqtt_client, pub_message):
+    result = akiro_mqtt_client.publish(topic, pub_message, qos, False)
+    # result: [0, 1]
+    status = result[0]
+    if status == 0:
+        print(f"Send `{pub_message}` to topic `{topic}` with qos `{qos}`")
+    else:
+        print(f"Failed to send message to topic `{topic}` with qos `{qos}`")
 
 
 def start():
+    publish_message = {"a": "test"}
     akiro_mqtt_client = connect_mqtt()
     akiro_mqtt_client.loop_start()
-    akiro_publish(akiro_mqtt_client)
+    akiro_publish(akiro_mqtt_client, (json.dumps(publish_message)))
     # akiro_client.loop_stop()
+    time.sleep(2)
     disconnect_mqtt(akiro_mqtt_client)
 
 

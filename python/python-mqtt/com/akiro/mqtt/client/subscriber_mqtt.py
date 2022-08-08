@@ -54,6 +54,7 @@ def akiro_subscribe(akiro_mqtt_client: mqtt_client):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
     akiro_mqtt_client.subscribe(topic, qos)
+    print(f"Mqtt Client got subscribed to topic: `{topic}")
     akiro_mqtt_client.on_message = on_message
 
 
@@ -71,10 +72,9 @@ def start():
     akiro_subscribe(akiro_mqtt_client)
     # This client will listen to the topic forever
     akiro_mqtt_client.loop_forever()
-    # unsubscribe from the topic
-    akiro_unsubscribe(akiro_mqtt_client)
-
-    disconnect_mqtt(akiro_mqtt_client)
+    # # unsubscribe from the topic
+    # akiro_unsubscribe(akiro_mqtt_client)
+    # disconnect_mqtt(akiro_mqtt_client)
 
 
 if __name__ == '__main__':
