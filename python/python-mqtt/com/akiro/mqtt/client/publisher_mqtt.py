@@ -10,14 +10,15 @@ from pathlib import Path
 # Read config.ini file
 config_object = ConfigParser()
 path_current_directory = sys.path[1]
-config_object.read(path_current_directory + "/python-mqtt/conf/config.ini")
+print(path_current_directory)
+config_object.read(path_current_directory + "/python/python-mqtt/conf/config.ini")
 
 # MQTT Broker
 akiroBrokerConfig = config_object["AkiroMQTTConfig"]
 broker = akiroBrokerConfig["host"]
 port = int(akiroBrokerConfig["port"])
 # MQTT Topic
-topic = akiroBrokerConfig["topic"]
+topic = akiroBrokerConfig["publisher_topic"]
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 # MQTT Credentials

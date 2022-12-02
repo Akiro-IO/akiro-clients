@@ -9,14 +9,14 @@ from configparser import ConfigParser
 # Read config.ini file
 path_current_directory = sys.path[1]
 config_object = ConfigParser()
-config_object.read(path_current_directory + "/python-mqtt/conf/config.ini")
+config_object.read(path_current_directory + "/python/python-mqtt/conf/config.ini")
 
 # Akiro MQTT Broker
 akiroBrokerConfig = config_object["AkiroMQTTConfig"]
 broker = akiroBrokerConfig["host"]
 port = int(akiroBrokerConfig["port"])
 # MQTT Topic
-topic = akiroBrokerConfig["topic"]
+topicsList = akiroBrokerConfig["subscriber_topic"]
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 # Akiro MQTT Credentials
@@ -28,6 +28,9 @@ keepalive = int(akiroBrokerConfig["keepalive"])
 qos = int(akiroBrokerConfig["qos"])
 # How many messages to publish
 message_limit = int(akiroBrokerConfig["message_limit"])
+
+topicsList = topicsList.replace(" ", "")
+topicsList = topicsList.split(",")
 
 
 def connect_mqtt():
@@ -53,16 +56,17 @@ def akiro_subscribe(akiro_mqtt_client: mqtt_client):
     def on_message(akiro_mqtt_client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-    akiro_mqtt_client.subscribe(topic, qos)
-    print(f"Mqtt Client got subscribed to topic: `{topic}")
+    for topics in topicsList:
+        akiro_mqtt_client.subscribe(topics, qos)
+        print(f"Mqtt Client got subscribed to topic: `{topics}")
     akiro_mqtt_client.on_message = on_message
 
 
 def akiro_unsubscribe(akiro_mqtt_client: mqtt_client):
     def on_message(akiro_mqtt_client, userdata, msg):
         print("Unsubscribed client!")
-
-    akiro_mqtt_client.unsubscribe(topic)
+    for topics in topicsList:
+        akiro_mqtt_client.unsubscribe(topics)
     akiro_mqtt_client.on_message = on_message
 
 
