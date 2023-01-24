@@ -58,7 +58,7 @@ def akiro_subscribe(akiro_mqtt_client: mqtt_client):
 
     for topics in topicsList:
         akiro_mqtt_client.subscribe(topics, qos)
-        print(f"Mqtt Client got subscribed to topic: `{topics}")
+        print(f"Mqtt Client got subscribed to topic: {topics}")
     akiro_mqtt_client.on_message = on_message
 
 

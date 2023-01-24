@@ -1,10 +1,15 @@
+import base64
 import json
 import random
 import sys
 import time
+from tkinter import Image
+
+import numpy as np
 
 from paho.mqtt import client as mqtt_client
 from configparser import ConfigParser
+
 from pathlib import Path
 
 # Read config.ini file
@@ -60,12 +65,16 @@ def akiro_publish(akiro_mqtt_client, pub_message):
 
 
 def start():
-    publish_message = {"a": "test"}
+    # publish_message = {"a": "test"}
+    f = open("/Users/siva/Downloads/Object_Detection.jpeg", "rb")  # 3.7kiB in same folder
+    png_encoded = base64.b64encode(f.read())
+    encoded_b2 = "".join([format(n, '08b') for n in png_encoded])
+    print(encoded_b2.__sizeof__());
     akiro_mqtt_client = connect_mqtt()
     akiro_mqtt_client.loop_start()
-    akiro_publish(akiro_mqtt_client, (json.dumps(publish_message)))
+    akiro_publish(akiro_mqtt_client,encoded_b2)
     # akiro_client.loop_stop()
-    time.sleep(2)
+    time.sleep(100000)
     disconnect_mqtt(akiro_mqtt_client)
 
 
